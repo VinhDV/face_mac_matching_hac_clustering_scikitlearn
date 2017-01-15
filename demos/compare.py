@@ -21,7 +21,8 @@
 import time
 
 start = time.time()
-
+from os import listdir
+from os.path import isfile, join
 import argparse
 import cv2
 import itertools
@@ -67,7 +68,9 @@ def getRep(imgPath):
         print("Processing {}.".format(imgPath))
     bgrImg = cv2.imread(imgPath)
     if bgrImg is None:
-        raise Exception("Unable to load image: {}".format(imgPath))
+        print("Unable to load image: {}".format(imgPath))
+        return None
+    """
     rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
 
     if args.verbose:
@@ -76,29 +79,41 @@ def getRep(imgPath):
     start = time.time()
     bb = align.getLargestFaceBoundingBox(rgbImg)
     if bb is None:
-        raise Exception("Unable to find a face: {}".format(imgPath))
+        print("Unable to find a face: {}".format(imgPath))
+        return None
     if args.verbose:
         print("  + Face detection took {} seconds.".format(time.time() - start))
 
     start = time.time()
     alignedFace = align.align(args.imgDim, rgbImg, bb,
                               landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
+
     if alignedFace is None:
         raise Exception("Unable to align image: {}".format(imgPath))
     if args.verbose:
         print("  + Face alignment took {} seconds.".format(time.time() - start))
+        """
 
     start = time.time()
-    rep = net.forward(alignedFace)
+    rep = net.forward(bgrImg)
     if args.verbose:
         print("  + OpenFace forward pass took {} seconds.".format(time.time() - start))
         print("Representation:")
         print(rep)
         print("-----\n")
     return rep
+ImgPath = args.imgs[0]
+onlyfiles = [join(ImgPath, f) for f in listdir(ImgPath) if isfile(join(ImgPath, f))]
 
-for (img1, img2) in itertools.combinations(args.imgs, 2):
-    d = getRep(img1) - getRep(img2)
-    print("Comparing {} with {}.".format(img1, img2))
-    print(
-        "  + Squared l2 distance between representations: {:0.3f}".format(np.dot(d, d)))
+
+
+for (img1, img2) in itertools.combinations(onlyfiles, 2):
+    if getRep(img1) != None and getRep(img2) != None:
+        d = getRep(img1) - getRep(img2)
+        a = cv2.imread(img1)
+        b = cv2.imread(img2)
+        cv2.imshow("image1",a)
+        cv2.imshow("image2", b)
+        print(
+            "  + Squared l2 distance between representations: {:0.3f}".format(np.dot(d, d)))
+        cv2.waitKey(0)

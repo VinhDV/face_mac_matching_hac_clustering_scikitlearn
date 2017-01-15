@@ -122,7 +122,7 @@ class AlignDlib:
 
         faces = self.getAllFaceBoundingBoxes(rgbImg)
         if (not skipMulti and len(faces) > 0) or len(faces) == 1:
-            return max(faces, key=lambda rect: rect.width() * rect.height())
+            return faces
         else:
             return None
 
